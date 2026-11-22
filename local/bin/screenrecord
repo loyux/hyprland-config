@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+WF_RECORDER="${WF_RECORDER:-$HOME/.local/bin/wf-recorder}"
+VIDEOS_DIR="${SCREENRECORD_DIR:-$HOME/Videos}"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+PIDFILE="$RUNTIME_DIR/screenrecord.pid"
+STATEFILE="$RUNTIME_DIR/screenrecord.file"
+LOGFILE="$RUNTIME_DIR/screenrecord.log"
+FPS="${SCREENRECORD_FPS:-30}"
+export LIBVA_DRIVER_NAME="${LIBVA_DRIVER_NAME:-iHD}"
+
+ensure_hypr_env() {
+  if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+    local dirs=(/run/user/"$(id -u)"/hypr/*)
+    if [[ -d "${dirs[0]:-}" ]]; then
+      export HYPRLAND_INSTANCE_SIGNATURE="${dirs[0]##*/}"
+    fi
+  fi
+  if [[ -z "${WAYLAND_DISPLAY:-}" && -S /run/user/"$(id -u)"/wayland-1 ]]; then
+    export WAYLAND_DISPLAY=wayland-1
+  fi
+}
+
+notify() {
+  local icon="$1" color="$2" message="$3" timeout="${4:-4000}"
+  ensure_hypr_env
+  hyprctl notify "$icon" "$timeout" "$color" "$message" >/dev/null 2>&1 || true
+}
+
+running_pid() {
+  local pid=""
+  if [[ -f "$PIDFILE" ]]; then
+    pid=$(cat "$PIDFILE" 2>/dev/null || true)
+    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+      printf '%s\n' "$pid"
+      return 0
+    fi
+  fi
+  pid=$(pgrep -u "$(id -u)" -x wf-recorder | head -1 || true)
+  if [[ -n "$pid" ]]; then
+    printf '%s\n' "$pid"
+    return 0
+  fi
+  return 1
+}
+
+is_running() {
+  running_pid >/dev/null 2>&1
+}
+
+audio_arg() {
+  local sink monitor
+  sink=$(pactl get-default-sink 2>/dev/null || true)
+  if [[ -n "$sink" ]]; then
+    monitor="${sink}.monitor"
+    if pactl list short sources 2>/dev/null | awk '{print $2}' | grep -qx "$monitor"; then
+      printf '%s\n' "--audio=${monitor}"
+      return 0
+    fi
+  fi
+  printf '%s\n' "-a"
+}
+
+focused_output() {
+  ensure_hypr_env
+  hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused == true) | .name' | head -1
+}
+
+vaapi_ok() {
+  command -v vainfo >/dev/null 2>&1 || return 1
+  [[ -e /dev/dri/renderD128 ]] || return 1
+  vainfo --display drm --device /dev/dri/renderD128 2>/dev/null | grep -Eq 'VAProfileH264(High|Main).*VAEntrypointEncSlice'
+}
+
+stop_recording() {
+  local pid="" outfile=""
+  pid=$(running_pid || true)
+  outfile=$(cat "$STATEFILE" 2>/dev/null || true)
+  if [[ -z "$pid" ]]; then
+    notify 1 "rgb(f59e0b)" "当前没有在录屏"
+    rm -f "$PIDFILE"
+    return 0
+  fi
+  kill -INT "$pid" 2>/dev/null || true
+  local _i
+  for _i in $(seq 1 80); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      break
+    fi
+    sleep 0.1
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -TERM "$pid" 2>/dev/null || true
+  fi
+  rm -f "$PIDFILE"
+  if [[ -n "$outfile" && -s "$outfile" ]]; then
+    notify 5 "rgb(22c55e)" "已保存 $(basename "$outfile")" 7000
+    if command -v wl-copy >/dev/null 2>&1; then
+      printf '%s' "$outfile" | wl-copy -n || true
+    fi
+  else
+    notify 3 "rgb(ef4444)" "录屏结束，但文件可能未写完" 7000
+  fi
+}
+
+launch_recorder() {
+  local outfile="$1"
+  shift
+  : > "$LOGFILE"
+  printf '%s\n' "$outfile" > "$STATEFILE"
+  setsid "$WF_RECORDER" "$@" </dev/null >"$LOGFILE" 2>&1 &
+  printf '%s\n' "$!" > "$PIDFILE"
+  sleep 0.5
+  kill -0 "$(cat "$PIDFILE")" 2>/dev/null
+}
+
+start_recording() {
+  local mode="${1:-full}"
+  local outfile geom output
+  local -a args common_args
+
+  mkdir -p "$VIDEOS_DIR"
+  outfile="$VIDEOS_DIR/$(date +'%Y-%m-%d_%H-%M-%S').mp4"
+
+  common_args=(-f "$outfile" -y -C aac -D)
+  common_args+=("$(audio_arg)")
+
+  if [[ "$mode" == "region" ]]; then
+    geom=$(slurp 2>/dev/null || true)
+    if [[ -z "$geom" ]]; then
+      notify 1 "rgb(f59e0b)" "已取消框选录屏"
+      exit 0
+    fi
+    common_args+=(-g "$geom")
+  elif [[ "$mode" != "all" ]]; then
+    output=$(focused_output || true)
+    if [[ -n "$output" ]]; then
+      common_args+=(-o "$output")
+    fi
+  fi
+
+  if vaapi_ok; then
+    args=("${common_args[@]}" -c h264_vaapi -d /dev/dri/renderD128 -b 0)
+    if ! launch_recorder "$outfile" "${args[@]}"; then
+      args=("${common_args[@]}" -c libx264 -x yuv420p -r "$FPS" -p crf=23 -p preset=fast)
+      launch_recorder "$outfile" "${args[@]}" || true
+    fi
+  else
+    args=("${common_args[@]}" -c libx264 -x yuv420p -r "$FPS" -p crf=23 -p preset=fast)
+    launch_recorder "$outfile" "${args[@]}" || true
+  fi
+
+  if ! is_running; then
+    notify 3 "rgb(ef4444)" "启动录屏失败，日志: $LOGFILE" 8000
+    rm -f "$PIDFILE"
+    exit 1
+  fi
+
+  if [[ "$mode" == "region" ]]; then
+    notify 5 "rgb(38bdf8)" "开始框选录屏，再按一次停止"
+  else
+    notify 5 "rgb(38bdf8)" "开始录屏，再按 Super+Shift+R 停止"
+  fi
+}
+
+status() {
+  if is_running; then
+    printf 'recording %s pid=%s\n' "$(cat "$STATEFILE" 2>/dev/null || echo unknown)" "$(running_pid)"
+  else
+    printf 'idle\n'
+  fi
+}
+
+cmd="${1:-toggle}"
+case "$cmd" in
+  toggle|full)
+    if is_running; then stop_recording; else start_recording full; fi
+    ;;
+  all)
+    if is_running; then stop_recording; else start_recording all; fi
+    ;;
+  region)
+    if is_running; then stop_recording; else start_recording region; fi
+    ;;
+  stop)
+    stop_recording
+    ;;
+  status)
+    status
+    ;;
+  *)
+    printf 'Usage: screenrecord [toggle|region|all|stop|status]\n' >&2
+    exit 2
+    ;;
+esac

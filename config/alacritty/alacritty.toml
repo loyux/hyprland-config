@@ -1,0 +1,200 @@
+
+# Window settings
+[window]
+#  The window dimensions in columns and lines. (changes require restart)
+#  dimensions = { columns = 80, lines = 24 }
+
+#  Startup mode:  `Windowed`, `Maximized`, `Fullscreen`
+startup_mode = "Windowed"
+
+#  Window decorations.  Valid values are `Full`, `Transparent`, `Buttonless`.
+decorations = "Full"
+
+#  Window opacity (0.0 transparent through 1.0 opaque).
+opacity = 0.9 # Example: 90% opacity. Adjust to your preference.
+
+
+# Font settings
+[font]
+  size = 11.0   # 4K @ scale 2.4 下，16 会显得像 PPT；10~12 是常规区间（改完热重载即生效）
+  # Normal (roman) font face
+  [font.normal]
+    family = "SF Mono"   # Use "SF Mono" (ensure it's installed!)
+    style = "Regular"
+
+  # Bold font face
+  [font.bold]
+    family = "SF Mono"
+    style = "Bold"
+
+  # Italic font face
+  [font.italic]
+    family = "SF Mono"
+    style = "Italic"
+
+  # Bold italic font face
+  [font.bold_italic]
+    family = "SF Mono"
+    style = "Bold Italic"
+
+  # Point size of the font
+
+  # Offset is the extra space around each character. `offset.y` can be thought of
+  # as modifying the linespacing, and `offset.x` as modifying the letter spacing.
+  [font.offset]
+    x = 0
+    y = 0
+
+  # Glyph offset determines the locations of the glyphs within their cells with
+  # the default being at the bottom. Increasing `x` moves the glyph to the right,
+  # increasing `y` moves the glyph upwards.
+  [font.glyph_offset]
+    x = 0
+    y = 0
+
+  # Use built-in font smoothing.  On macOS, this is always enabled.
+  # use_thin_strokes = false # Deprecated; ignored on macOS
+
+  # If `true`, bold text is drawn using a different font style.
+  # If `false`, bold text is drawn by scaling and overlapping the normal font.
+
+
+# Colors (Gruvbox Dark -  You can replace this with your preferred theme!)
+[colors]
+  # Default colors
+  [colors.primary]
+    background = '#282828'
+    foreground = '#ebdbb2'
+
+  # Normal colors
+  [colors.normal]
+    black   = '#282828'
+    red     = '#cc241d'
+    green   = '#98971a'
+    yellow  = '#d79921'
+    blue    = '#458588'
+    magenta = '#b16286'
+    cyan    = '#689d6a'
+    white   = '#a89984'
+
+  # Bright colors
+  [colors.bright]
+    black   = '#928374'
+    red     = '#fb4934'
+    green   = '#b8bb26'
+    yellow  = '#fabd2f'
+    blue    = '#83a598'
+    magenta = '#d3869b'
+    cyan    = '#8ec07c'
+    white   = '#ebdbb2'
+
+  # (Optional) Dim colors
+  # [colors.dim]
+  #  black = '#32302f' # Example
+  # ...
+
+# Cursor settings
+[cursor]
+  #  Cursor style: `● Block`, `_ Underline`, `| Beam`
+  style = { shape = "Block", blinking = "On" }  # Blinking cursor
+
+  #  Cursor blinking interval in milliseconds.
+  blink_interval = 750
+
+  # Cursor blinking timeout in milliseconds.  If set to `0`, the cursor will
+  # continue blinking forever.
+  blink_timeout = 0
+
+  # If this is `true`, the cursor will be rendered as a hollow box when the
+  # window is not focused.
+  unfocused_hollow = true
+
+  # Thickness of the cursor relative to the font cell width (1.0 = full width)
+  thickness = 0.15
+
+# Scrolling
+[scrolling]
+  # Maximum number of lines in the scrollback buffer.
+  # Specifying '0' will disable scrolling.
+  history = 10000
+
+  # Number of lines the viewport will move for every line scrolled when
+  # scrollback is enabled (history > 0).
+  multiplier = 3
+
+# Selection
+[selection]
+  # This string contains all characters that are considered part of a word when
+  # performing "semantic selection" (double click).
+  semantic_escape_chars = ",│`|:\"' ()[]{}<>"
+
+  # When set to `true`, selected text will be copied to the primary clipboard.
+  save_to_clipboard = false
+
+# Key bindings
+[keyboard]
+  # Keybindings are defined in a list of maps.
+  # Each map represents a single binding and has the following fields:
+  #   - `key` (required):  The key which should trigger the binding.
+  #   - `mods` (optional): The modifiers which should be active.
+  #   - `chars` (optional): Text to be input.
+  #   - `action` (optional): Action to be executed.
+  #   - `command` (optional): Program to be launched (requires Alacritty 0.9.0+).
+
+  # Example key bindings (add your own)
+   bindings = [
+    #  { key = "V", mods = "Control|Shift", action = "Paste" },
+    #  { key = "C", mods = "Control|Shift", action = "Copy" },
+    #  { key = "T", mods = "Control|Shift", action = "CreateNewTab" }, # May not work, depends on your system
+    #  { key = "W", mods = "Control|Shift", action = "Close" }  #May not work, depends on your system
+
+     # Example of running a command (Alacritty 0.9.0+)
+     # { key = "U", mods = "Control|Shift", command = { program = "uptime", args = [] } },
+   ]
+
+# Shell
+[terminal.shell]
+  #  Specify the shell that Alacritty should use
+  program = "/bin/fish"  # Or /bin/bash, /usr/bin/fish, etc.
+  args = ["-l"] # Login shell
+
+# Bell
+[bell]
+ # Bell animation.  Valid values are `Ease`, `EaseOut`, `EaseOutSine`, `EaseOutQuad`, `EaseOutCubic`, `EaseOutQuart`, `EaseOutQuint`, `EaseOutExpo`, `EaseOutCirc`, `Linear`.
+  animation = "EaseOutExpo"
+  duration = 0  # duration in milliseconds
+
+[general]
+# Alacritty Configuration File (TOML)
+
+# General settings
+live_config_reload = true
+
+[terminal]
+  # color = '0xffffff'
+
+# (Optional) Mouse settings
+# [mouse]
+  #  Hide the cursor when typing
+  # hide_when_typing = false
+
+  #  Click settings
+  # [mouse.bindings]  # Example
+    # - { mouse = "Middle", action = "PasteSelection" }
+
+
+# (Optional) Debug settings - useful for troubleshooting
+# [debug]
+  #  Print all received window and keyboard events.
+  # print_events = false
+
+  #  Log level (default: `Warn`).
+  # log_level = "Warn"  # Options:  `Error`, `Warn`, `Info`, `Debug`, `Trace`
+
+  #  Record all Alacritty log messages to a file.
+  # record_messages = false
+
+#[[keyboard.bindings]]
+#key = "Return"
+#mods = "Shift"
+#chars = "\x1b\r"

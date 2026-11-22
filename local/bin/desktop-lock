@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Serialize lock requests; swaylock -f returns only after the lock is established.
+exec 9>"${XDG_RUNTIME_DIR:?}/desktop-lock.lock"
+flock -n 9 || exit 0
+pgrep -u "$(id -u)" -x swaylock >/dev/null && exit 0
+swaylock -f -c 14161c

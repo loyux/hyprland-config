@@ -1,0 +1,158 @@
+/* ============================================================================
+   Waybar 样式  (~/.config/waybar/style.css)
+   两块 4K 屏 scale=2，逻辑分辨率 1920x1080，所以字号按 1080p 的量级来定。
+   改完自动生效（config 里开了 reload_style_on_change）。
+   ============================================================================ */
+
+@define-color bg      rgba(20, 22, 28, 0.88);
+@define-color fg      #d8dee9;
+@define-color accent  #88c0d0;
+@define-color ok      #a3be8c;
+@define-color warn    #ebcb8b;
+@define-color crit    #bf616a;
+
+* {
+  font-family: "JetBrains Mono", "Font Awesome 7 Free", "Noto Sans CJK SC",
+               "Font Awesome 6 Free", "Noto Color Emoji", monospace;
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+}
+
+window#waybar {
+  background: @bg;
+  color: @fg;
+  border-bottom: 1px solid rgba(136, 192, 208, 0.35);
+}
+
+tooltip {
+  background: rgba(20, 22, 28, 0.95);
+  color: @fg;
+  border: 1px solid rgba(136, 192, 208, 0.4);
+}
+tooltip label {
+  padding: 4px 8px;
+}
+
+/* 每个模块做成小圆角胶囊 */
+#workspaces, #window, #clock, #cpu, #memory, #disk, #temperature,
+#network, #pulseaudio, #tray, #idle_inhibitor, #custom-launcher,
+#custom-temperature, #custom-codex, #custom-pi {
+  margin: 4px 2px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ---------- 左：启动器 / 工作区 / 窗口 ---------- */
+#custom-launcher {
+  color: @accent;
+  font-size: 16px;
+}
+#custom-launcher:hover {
+  background: rgba(136, 192, 208, 0.25);
+}
+
+#workspaces button {
+  color: rgba(216, 222, 233, 0.55);
+  padding: 0 8px;
+  margin: 0 1px;
+  background: transparent;
+}
+#workspaces button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: @fg;
+}
+#workspaces button.active {
+  background: @accent;
+  color: #14161c;
+  font-weight: bold;
+}
+#workspaces button.urgent {
+  background: @crit;
+  color: #fff;
+}
+#workspaces button.persistent {
+  color: rgba(216, 222, 233, 0.35);
+}
+
+#window {
+  color: #e5e9f0;
+  margin-left: 8px;
+}
+#window.empty {
+  color: rgba(216, 222, 233, 0.3);
+}
+
+/* ---------- 中：日期 / 时间 ---------- */
+#clock {
+  background: transparent;
+  padding: 0 6px;
+}
+#clock.date {
+  color: rgba(216, 222, 233, 0.7);
+}
+#clock.time {
+  color: @accent;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* ---------- 右：硬件状态 ---------- */
+#cpu                 { color: @ok; }
+#cpu.warning         { color: @warn; }
+#cpu.critical        { color: @crit; background: rgba(191, 97, 106, 0.2); }
+
+#memory              { color: #b48ead; }
+#memory.warning      { color: @warn; }
+#memory.critical     { color: @crit; background: rgba(191, 97, 106, 0.2); }
+
+#disk                { color: #d08770; }
+#disk.warning        { color: @warn; }
+#disk.critical       { color: @crit; background: rgba(191, 97, 106, 0.2); }
+
+#temperature, #custom-temperature { color: #81a1c1; }
+
+/* 网络：连接/断开/速率着色 */
+#network             { color: @accent; }
+#network.wifi        { color: @ok; }
+#network.ethernet    { color: @accent; }
+#network.linked      { color: @warn; }
+#network.disconnected,
+#network.disabled    { color: @crit; background: rgba(191, 97, 106, 0.25); }
+
+#pulseaudio                { color: @ok; }
+#pulseaudio.muted          { color: rgba(216, 222, 233, 0.4); }
+
+#tray {
+  padding: 0 6px;
+}
+#tray > .passive { -gtk-icon-effect: dim; }
+#tray > .needs-attention { -gtk-icon-effect: highlight; }
+
+#idle_inhibitor                { color: rgba(216, 222, 233, 0.6); }
+#idle_inhibitor.activated      { color: @warn; background: rgba(235, 203, 139, 0.18); }
+
+/* 通用：鼠标放上去高亮 */
+#cpu:hover, #memory:hover, #disk:hover, #network:hover,
+#pulseaudio:hover, #idle_inhibitor:hover, #clock:hover,
+#custom-codex:hover, #custom-pi:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ---------- 今日 token ---------- */
+#custom-codex { color: @accent; }
+#custom-pi { color: #b48ead; }
+#custom-codex.unavailable, #custom-pi.unavailable { color: @warn; }
+
+#custom-codex.working, #custom-pi.working {
+  animation: agent-activity 1.6s ease-in-out infinite;
+}
+
+@keyframes agent-activity {
+  from { opacity: 1; }
+  50% { opacity: 0.35; }
+  to { opacity: 1; }
+}

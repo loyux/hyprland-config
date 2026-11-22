@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+case "${CLIPBOARD_STATE:-data}" in
+    sensitive|clear|nil) exit 0 ;;
+esac
+exec cliphist -max-items 300 store

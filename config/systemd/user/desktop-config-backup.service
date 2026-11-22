@@ -1,0 +1,7 @@
+[Unit]
+Description=Back up Hyprland desktop configuration (keep 14 archives)
+
+[Service]
+Type=oneshot
+ExecStart=/home/loyu/.local/bin/desktop-config-backup
+UMask=0077

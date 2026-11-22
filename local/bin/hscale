@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# hscale — 双 4K 屏即时切换 Hyprland 缩放（无需改配置、无需重登）
+# 用法: hscale 1.75        临时切换（立即生效，重启后回到配置里的值）
+#       hscale 1.75 -w     切换并写回 ~/.config/hypr/hyprland.conf
+set -euo pipefail
+
+SCALE="${1:-}"
+[[ -z "$SCALE" ]] && { echo "用法: hscale <scale> [-w]   例: hscale 1.75 -w"; exit 1; }
+MODE="${2:-}"
+M1=HDMI-A-1; M2=HDMI-A-2
+CONF="$HOME/.config/hypr/hyprland.conf"
+
+# 右屏 x 坐标 = 3840 / scale，四舍五入到整数，保证两屏边缘严格对齐
+X=$(python3 -c "import math;print(round(3840/$SCALE))")
+
+hyprctl keyword monitor "$M1, 3840x2160@60, 0x0, $SCALE" >/dev/null
+hyprctl keyword monitor "$M2, 3840x2160@60, ${X}x0, $SCALE" >/dev/null
+
+echo "== 已生效 =="
+hyprctl monitors -j | python3 -c "
+import sys,json
+for m in json.load(sys.stdin):
+    print('  %-9s %dx%d@%dHz scale %-4s -> 逻辑 %dx%d @ (%d,%d)' % (
+        m['name'], m['width'], m['height'], round(m['refreshRate']), m['scale'],
+        round(m['width']/m['scale']), round(m['height']/m['scale']), m['x'], m['y']))"
+
+if [[ "$MODE" == "-w" || "$MODE" == "--write" ]]; then
+  cp "$CONF" "$CONF.bak-hscale-$(date +%Y%m%d-%H%M%S)"
+  python3 - "$CONF" "$SCALE" "$X" <<'PY'
+import re, sys
+conf, scale, x = sys.argv[1], sys.argv[2], sys.argv[3]
+s = open(conf).read()
+s = re.sub(r'(?m)^monitor = HDMI-A-1, .*$', f'monitor = HDMI-A-1, 3840x2160@60, 0x0, {scale}', s, count=1)
+s = re.sub(r'(?m)^monitor = HDMI-A-2, .*$', f'monitor = HDMI-A-2, 3840x2160@60, {x}x0, {scale}', s, count=1)
+open(conf, 'w').write(s)
+PY
+  echo "已写回 $CONF （旧版本已备份）"
+fi

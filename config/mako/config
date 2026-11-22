@@ -1,0 +1,23 @@
+font=Noto Sans CJK SC 12
+background-color=#14161cf2
+text-color=#d8dee9ff
+border-color=#88c0d0ff
+border-size=2
+border-radius=10
+padding=14
+margin=12
+width=380
+height=180
+anchor=top-right
+output=HDMI-A-2
+default-timeout=7000
+max-visible=4
+max-history=30
+layer=overlay
+
+[urgency=critical]
+border-color=#bf616aff
+default-timeout=0
+
+[mode=do-not-disturb]
+invisible=1

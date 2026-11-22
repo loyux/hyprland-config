@@ -1,0 +1,11 @@
+[Unit]
+Description=Store clipboard image history
+PartOf=hypr-desktop.target graphical-session.target
+After=graphical-session.target
+ConditionEnvironment=WAYLAND_DISPLAY
+
+[Service]
+ExecStart=/usr/bin/wl-paste --type image --watch /home/loyu/.local/bin/clipboard-store
+Restart=on-failure
+RestartSec=2
+UMask=0077

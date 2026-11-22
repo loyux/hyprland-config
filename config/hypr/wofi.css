@@ -1,0 +1,12 @@
+* {
+    font-family: "JetBrains Mono", "JetBrains Mono NL", monospace;
+    font-size: 14px;
+}
+
+window,
+#outer-box,
+#input,
+#entry,
+#text {
+    font-family: "JetBrains Mono", "JetBrains Mono NL", monospace;
+}

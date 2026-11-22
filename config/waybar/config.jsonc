@@ -1,0 +1,183 @@
+{
+  // ==========================================================================
+  //  Waybar @ Hyprland   (~/.config/waybar/config.jsonc)
+  //
+  //  左：启动器 · 工作区 · 当前窗口标题
+  //  中：日期 · 时间（悬停看日历）
+  //  右：温度 · CPU · 内存 · 磁盘 · 网络(IP + 实时上下行速率) · 音量 · 托盘 · 防休眠
+  //
+  //  修改后生效：  pkill -USR2 waybar        （原地重启，不断条）
+  //  看图标字体：  已装 otf-font-awesome（Font Awesome 7 Free）
+  // ==========================================================================
+  "layer": "top",
+  "position": "top",
+  "mode": "dock",
+  "height": 34,
+  "spacing": 4,
+  "margin": 0,
+  "exclusive": true,
+  // ⚠ 不要写 "output": [] —— 空数组会被当成“匹配不到任何屏”，状态栏会直接不出现（踩过坑）。
+  // 只有想限制到某一块屏时才写，例如："output": ["HDMI-A-1"]；不写 = 两块屏都显示。
+  "reload_style_on_change": true,
+
+  "modules-left": [
+    "custom/launcher",
+    "hyprland/workspaces",
+    "hyprland/window"
+  ],
+  "modules-center": [
+    "clock#date",
+    "clock#time"
+  ],
+  "modules-right": [
+    "custom/codex",
+    "custom/pi",
+    "cpu",
+    "memory",
+    "disk",
+    "custom/temperature",
+    "network",
+    "pulseaudio",
+    "tray",
+    "idle_inhibitor"
+  ],
+
+  // ─────────────────────────── 左侧 ───────────────────────────
+  "custom/launcher": {
+    "format": "\uf135",
+    "tooltip": false,
+    "on-click": "rofi -show drun -show-icons -font \"JetBrains Mono 14\""
+  },
+
+  "hyprland/workspaces": {
+    "format": "{name}",
+    "active-only": false,
+    "on-click": "activate",
+    "persistent-workspaces": {
+      "HDMI-A-1": [1, 2, 3],
+      "HDMI-A-2": [4, 5, 6]
+    }
+  },
+
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 28,
+    "separate-outputs": true
+  },
+
+  // ─────────────────────────── 中间：日期 / 时间 ───────────────────────────
+  "clock#date": {
+    "interval": 30,
+    "format": "\uf133 {:%m/%d %a}",
+    "timezone": "Asia/Shanghai",
+    "tooltip": false
+  },
+  "clock#time": {
+    "interval": 1,
+    "format": "{:%H:%M:%S}",
+    "timezone": "Asia/Shanghai",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "year",
+      "mode-mon-col": 3,
+      "weeks-pos": "none",
+      "first-day-of-week": 1,
+      "on-scroll": 1,
+      "on-click-right": "mode"
+    }
+  },
+
+  // ─────────────────────────── 右侧：硬件状态 ───────────────────────────
+  "cpu": {
+    "interval": 2,
+    "format": "\uf2db {usage}%",
+    "tooltip-format": "CPU 占用 {usage}%\n平均频率 {avg_frequency} GHz\n平均负载 {load}",
+    "states": { "warning": 70, "critical": 90 },
+    "on-click": "kitty -e htop"
+  },
+
+  "memory": {
+    "interval": 5,
+    "format": "\uf538 {percentage}%",
+    "tooltip-format": "内存 {used:0.1f} / {total:0.1f} GiB\nSwap {swapUsed:0.1f} GiB",
+    "states": { "warning": 80, "critical": 92 }
+  },
+
+  "disk": {
+    "interval": 300,
+    "paths": ["/"],
+    "unit": "GiB",
+    "format": "\uf0a0 {percentage_free}% 空闲",
+    "tooltip-format": "{path} 已用 {specific_used} / 共 {specific_total}（空闲 {percentage_free}%）",
+    "states": { "warning": 20, "critical": 10 }
+  },
+
+  // 按客户端和本机日期统计 token，悬停可看明细。
+  "custom/codex": {
+    "exec": "python3 \"$HOME/.config/waybar/scripts/token-usage.py\" codex",
+    "interval": 3,
+    "format": "{}",
+    "return-type": "json",
+    "tooltip": true
+  },
+
+  "custom/pi": {
+    "exec": "python3 \"$HOME/.config/waybar/scripts/token-usage.py\" pi",
+    "interval": 3,
+    "format": "{}",
+    "return-type": "json",
+    "tooltip": true
+  },
+
+  "custom/temperature": {
+    "exec": "~/.config/waybar/scripts/temp.sh",
+    "interval": 10,
+    "format": "{}",
+    "tooltip": false
+  },
+
+  // ─────────────────────────── 网络 ───────────────────────────
+  // 左键切换速率显示格式；右键打开网络连接设置。
+  "network": {
+    "family": "ipv4",
+    "interval": 1,
+    "format": "{ifname}",
+    "format-ethernet": "\uf6ff {ipaddr}  \uf062{bandwidthUpBytesCompact} \uf063{bandwidthDownBytesCompact}",
+    "format-linked": "\uf6ff {ifname} 无IP",
+    "format-wifi": "\uf1eb {essid} {signalStrength}%  \uf062{bandwidthUpBytesCompact} \uf063{bandwidthDownBytesCompact}",
+    "format-disconnected": "\uf071 无网络",
+    "format-alt": "\uf6ff ↓{bandwidthDownBits} ↑{bandwidthUpBits}",
+    "tooltip-format": "{ifname}  {ipaddr}\n↓ {bandwidthDownBits}   ↑ {bandwidthUpBits}\n链路 {linkSpeed}",
+    "tooltip-format-disconnected": "网络未连接",
+    "on-click-right": "nm-connection-editor"
+  },
+
+  // ─────────────────────────── 音量 / 托盘 / 防休眠 ───────────────────────────
+  "pulseaudio": {
+    "format": "\uf028 {volume}%",
+    "format-bluetooth": "\uf029 {volume}%",
+    "format-muted": "\uf026 静音",
+    "tooltip-format": "{desc}\n音量 {volume}%",
+    "scroll-step": 3,
+    "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+    "on-click-middle": "pavucontrol",
+    "on-click-right": "pavucontrol",
+    "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 3%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 3%-"
+  },
+
+  "tray": {
+    "icon-size": 18,
+    "spacing": 8,
+    "show-passive-items": true
+  },
+
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "\uf023",
+      "deactivated": "\uf09c"
+    },
+    "tooltip": true
+  }
+}

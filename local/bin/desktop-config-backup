@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+backup_dir="$HOME/.local/state/desktop-backups"
+mkdir -p "$backup_dir"
+exec 9>"$backup_dir/.lock"
+flock -n 9 || exit 0
+archive="$backup_dir/desktop-$(date +%Y%m%d-%H%M%S).tar.gz"
+items=()
+for path in .config/hypr .config/waybar .config/mako .config/systemd/user/hypr-desktop.target .config/systemd/user/hypr-session-watch.service .config/systemd/user/mako.service.d .config/systemd/user/hypridle.service.d .config/systemd/user/hyprpolkitagent.service.d .config/systemd/user/clipboard-text.service .config/systemd/user/clipboard-image.service .config/systemd/user/desktop-config-backup.service .config/systemd/user/desktop-config-backup.timer .local/bin/desktop-lock .local/bin/desktop-dpms .local/bin/hypr-desktop-start .local/bin/hypr-session-watch .local/bin/clipboard-menu .local/bin/clipboard-store .local/bin/desktop-config-backup; do
+    [[ -e "$HOME/$path" ]] && items+=("$path")
+done
+tar -czf "$archive.part" -C "$HOME" "${items[@]}"
+mv "$archive.part" "$archive"
+# Remove only archives created by this script; keep the newest 14.
+python3 - "$backup_dir" <<'PY'
+from pathlib import Path
+import sys
+archives=sorted(Path(sys.argv[1]).glob('desktop-????????-??????.tar.gz'),reverse=True)
+for path in archives[14:]:
+    path.unlink()
+PY
+printf 'Desktop configuration backup: %s\n' "$archive"

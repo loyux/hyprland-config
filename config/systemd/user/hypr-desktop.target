@@ -1,0 +1,10 @@
+[Unit]
+Description=Hyprland desktop services
+PartOf=graphical-session.target
+Wants=mako.service hyprpolkitagent.service hypridle.service
+After=graphical-session.target
+Wants=clipboard-text.service clipboard-image.service
+BindsTo=hypr-session-watch.service
+After=hypr-session-watch.service
+# 壁纸（hyprpaper.service + hyprpaper.conf）已停用；想恢复壁纸取消下一行注释并 systemctl --user daemon-reload
+#Wants=hyprpaper.service

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+action=${1:-on}
+[[ "$action" == on || "$action" == off ]] || exit 2
+# Never blank the monitors unless the lock has succeeded.
+if [[ "$action" == off ]]; then "$HOME/.local/bin/desktop-lock"; fi
+version=$(hyprctl -j version | jq -r '.version')
+if [[ "$(printf '%s\n' 0.57.0 "$version" | sort -V | head -1)" == 0.57.0 ]]; then
+    hyprctl dispatch "hl.dsp.dpms({action = \"$action\"})"
+else
+    hyprctl dispatch dpms "$action"
+fi

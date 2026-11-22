@@ -1,0 +1,8 @@
+[Unit]
+Description=Watch the lifetime of the current Hyprland session
+PartOf=hypr-desktop.target
+ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE
+
+[Service]
+Type=exec
+ExecStart=/home/loyu/.local/bin/hypr-session-watch

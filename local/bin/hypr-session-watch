@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""Stop desktop services when this compositor exits, including with user lingering.
+
+hypr-desktop.target BindsTo 本服务，所以本脚本不能因为 `hyprctl` 瞬时失败就崩掉：
+Hyprland 刚启动 1~2 秒内 socket 还没就绪，`hyprctl -j instances` 会输出
+“No Hyprland instances running” 之类非 JSON 文本（历史上正是这样把整个
+target 连带 mako/hypridle/hyprpolkitagent 一起带崩的）。这里改为轮询等待，
+直到确认自己的实例存在才开始监视。
+"""
+import json
+import os
+import select
+import subprocess
+import sys
+import time
+
+WAIT_TIMEOUT = 60  # 等待自己的实例可查询的最长秒数
+POLL_INTERVAL = 1
+
+
+def my_instance_pid(signature: str):
+    """返回当前实例的 pid，查不到就返回 None（不抛异常）。"""
+    try:
+        out = subprocess.check_output(
+            ["hyprctl", "-j", "instances"],
+            stderr=subprocess.DEVNULL,
+            timeout=10,
+        )
+        instances = json.loads(out.decode())
+    except Exception:
+        return None
+    for inst in instances:
+        if inst.get("instance") == signature:
+            return inst.get("pid")
+    return None
+
+
+def main() -> int:
+    signature = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    if not signature:
+        # 不是 Hyprland 会话，立即正常退出，让 target 保持干净。
+        return 0
+
+    deadline = time.monotonic() + WAIT_TIMEOUT
+    pid = None
+    while time.monotonic() < deadline:
+        pid = my_instance_pid(signature)
+        if pid:
+            break
+        time.sleep(POLL_INTERVAL)
+
+    if not pid:
+        # 等不到实例：说明会话已死或环境不对，正常退出（会连带停掉 target）。
+        return 0
+
+    try:
+        fd = os.pidfd_open(pid)
+    except OSError:
+        fd = None
+
+    if fd is not None:
+        poll = select.poll()
+        poll.register(fd, select.POLLIN)
+        poll.poll()
+        os.close(fd)
+        return 0
+
+    # 拿不到 pidfd（内核/权限限制）时退化为轮询实例是否还在。
+    while my_instance_pid(signature):
+        time.sleep(POLL_INTERVAL)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

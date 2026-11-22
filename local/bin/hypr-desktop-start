@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Complete environment import before starting graphical user services.
+dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE
+systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE
+systemctl --user restart hypr-desktop.target
