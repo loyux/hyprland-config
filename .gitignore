@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 *.bak*
+config/hypr/backups/
+*.fix-backup
+cached_layouts
